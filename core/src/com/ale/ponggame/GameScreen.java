@@ -21,6 +21,7 @@ public class GameScreen extends ScreenAdapter {
 
     private ArrayList<Player> players;
     private ArrayList<Bullet> bullets;
+    private ArrayList<PickUp> pickUps;
     private IntSet keysPressedNow = new IntSet();
 
     private float circleX = 300;
@@ -44,7 +45,13 @@ public class GameScreen extends ScreenAdapter {
             public boolean touchDown(int x, int y, int pointer, int button) {
                 int renderY = Gdx.graphics.getHeight() - y;
                 // shoot bullet
-                bullets.add(new Bullet(players.get(0).hitbox.x, players.get(0).hitbox.y, 5, 5, 8, 2, new Color(0, 1, 0, 1)));
+                double a = Math.abs(x - (players.get(0).hitbox.x + players.get(0).hitbox.width/2));
+                double b = Math.abs(renderY - (players.get(0).hitbox.y + players.get(0).hitbox.height/2));
+                double hypotenuse = Math.sqrt((Math.pow( a, 2)) + Math.pow(b, 2)); // working
+                double angle = Math.asin(Math.sin(Math.PI/2) * b / hypotenuse);
+
+                bullets.add(new Bullet(players.get(0).hitbox.x + players.get(0).hitbox.width/2, players.get(0).hitbox.y + players.get(0).hitbox.height/2, players.get(0).currentWeapon.bulletWidth, players.get(0).currentWeapon.bulletHeight, players.get(0).currentWeapon.bulletSpeed, players.get(0).currentWeapon.bulletBouncesAllowed, players.get(0).currentWeapon.bulletColor, angle, (x - (players.get(0).hitbox.x + players.get(0).hitbox.width/2)), (renderY - (players.get(0).hitbox.y + players.get(0).hitbox.height/2))));
+
                 if (Vector2.dst(circleX, circleY, x, renderY) < circleRadius) {
                     game.setScreen(new EndScreen(game));
                 }
@@ -87,6 +94,7 @@ public class GameScreen extends ScreenAdapter {
                     iterator.remove();
                 } else {
                     b.xSpeed *= -1;
+                    b.a *= -1;
                 }
             } else if(b.hitbox.y < 0 || b.hitbox.y > Gdx.graphics.getHeight()) {
                 b.bounces++;
@@ -95,6 +103,7 @@ public class GameScreen extends ScreenAdapter {
                     iterator.remove();
                 } else {
                     b.ySpeed *= -1;
+                    b.b *= -1;
                 }
             }
             if(b.hitbox.overlaps(new Rectangle(circleX, circleY, circleRadius, circleRadius))) {
@@ -126,7 +135,7 @@ public class GameScreen extends ScreenAdapter {
         }
         //bullets
         for(Bullet b: bullets) {
-            b.draw(game.shapeRenderer);
+            b.draw(game.batch);
         }
         // ball
         game.shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
