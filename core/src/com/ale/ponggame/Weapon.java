@@ -10,15 +10,16 @@ public class Weapon {
     public int bulletHeight;
     public int bulletSpeed;
     public int bulletBouncesAllowed;
-    public Color bulletColor;
     public Texture bulletTexture;
+    public Texture weaponTexture;
 
-    public Weapon(int width, int height, int bulletSpeed, int bulletBouncesAllowed, int burst, Color bulletColor) {
+    public Weapon(int width, int height, int bulletSpeed, int bulletBouncesAllowed, int burst, Texture weaponTexture, Texture bulletTexture) {
         this.bulletWidth = width;
         this.bulletHeight = height;
         this.bulletSpeed = bulletSpeed;
         this.bulletBouncesAllowed = bulletBouncesAllowed;
         this.burst = burst;
-        this.bulletColor = bulletColor;
+        this.weaponTexture = weaponTexture;
+        this.bulletTexture = bulletTexture;
     }
 }

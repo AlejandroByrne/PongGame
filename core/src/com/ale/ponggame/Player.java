@@ -1,6 +1,8 @@
 package com.ale.ponggame;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 
@@ -33,7 +35,7 @@ public class Player {
         speed = 4;
 
         weapons = new ArrayList<Weapon>(); // create the player's weapon armory
-        currentWeapon = new Weapon(3, 3, 100, 4, 1, new Color(1, 0, 0, 1));
+        currentWeapon = new Weapon(3, 3, 20, 1, 1, new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/pistol.png")), new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/bullet-png-pictures-1.png")));
         weapons.add(currentWeapon);
     }
 

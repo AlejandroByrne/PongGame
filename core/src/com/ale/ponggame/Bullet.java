@@ -17,14 +17,14 @@ public class Bullet {
     public double initialAngle; // the initial angle, but from 0 - pi/2 (up to 90 degrees)
     public float currentAngleFull; // current initial angle, but from 0 - 2pi (full 360 degrees)
     public Rectangle hitbox;
-    public Color color;
+    public Texture texture;
     public int bouncesAllowed;
     public int bounces;
     public BS state;
     public double a;
     public double b;
 
-    public Bullet(float xInitial, float yInitial, int width, int height, int speed, int bounceAllowed, Color color, double initialAngle, double a, double b) {
+    public Bullet(float xInitial, float yInitial, int width, int height, int speed, int bounceAllowed, Texture texture, double initialAngle, double a, double b) {
         this.speed = speed;
         this.initialAngle = initialAngle;
         this.a = a;
@@ -46,7 +46,7 @@ public class Bullet {
         this.hitbox.y = yInitial;
         this.bouncesAllowed = bounceAllowed;
         this.bounces = 0;
-        this.color = color;
+        this.texture = texture;
         this.state = BS.BOUNCE0;
     }
 
@@ -55,17 +55,6 @@ public class Bullet {
         BOUNCE1,
         BOUNCE2,
         HIT
-    }
-
-    public void draw(ShapeRenderer sr) {
-        if(state == BS.BOUNCE0 || state == BS.BOUNCE1 || state == BS.BOUNCE2) {
-            sr.begin(ShapeRenderer.ShapeType.Filled);
-            sr.setColor(color);
-            sr.rect(hitbox.x, hitbox.y, hitbox.width, hitbox.height);
-            sr.end();
-        } else {
-            this.hit();
-        }
     }
 
     public void draw(SpriteBatch batch) {
@@ -79,7 +68,7 @@ public class Bullet {
             currentAngleFull = (float) ((Math.PI/2 - initialAngle) + (3 * (Math.PI / 2)));
         }
         batch.begin();
-        Texture texture = new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/bullet-png-pictures-1.png"));
+        Texture texture = this.texture;
         TextureRegion txtR = new TextureRegion(texture);
         batch.draw(txtR, hitbox.x, hitbox.y, 15, 15, 30, 30, 1, 1, ((float) (currentAngleFull * 360 / (2 * Math.PI))));
         System.out.println(currentAngleFull / (2* Math.PI) * 360);
