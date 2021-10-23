@@ -133,6 +133,9 @@ public class GameScreen extends ScreenAdapter {
         for(Player p : players) {
             p.draw(game.shapeRenderer);
         }
+        game.batch.begin();
+        game.font.draw(game.batch, ("Player X: " + players.get(0).hitbox.x + " Player Y: " + players.get(0).hitbox.y), Gdx.graphics.getWidth() * .1f, Gdx.graphics.getHeight() * .1f);
+        game.batch.end();
         //bullets
         for(Bullet b: bullets) {
             b.draw(game.batch);

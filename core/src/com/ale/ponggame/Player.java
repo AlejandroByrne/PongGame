@@ -33,7 +33,7 @@ public class Player {
         speed = 4;
 
         weapons = new ArrayList<Weapon>(); // create the player's weapon armory
-        currentWeapon = new Weapon(3, 3, 40, 2, 1, new Color(1, 0, 0, 1));
+        currentWeapon = new Weapon(3, 3, 100, 4, 1, new Color(1, 0, 0, 1));
         weapons.add(currentWeapon);
     }
 
