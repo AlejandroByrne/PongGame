@@ -32,6 +32,9 @@ public class TitleScreen extends ScreenAdapter {
 
         game.batch.begin();
         gameFont1.draw(game.batch, "Title Screen!", Gdx.graphics.getWidth() * .25f, Gdx.graphics.getHeight() * .75f);
+        gameFont1.draw(game.batch, "Use 'W', 'A', 'S', 'D' to move.", Gdx.graphics.getWidth() * .25f, Gdx.graphics.getHeight() * .63f);
+        gameFont1.draw(game.batch, "Click to shoot", Gdx.graphics.getWidth() * .25f, Gdx.graphics.getHeight() * .48f);
+        gameFont1.draw(game.batch, "Collect weapons and use '1' to switch weapons.", Gdx.graphics.getWidth() * .25f, Gdx.graphics.getHeight() * .35f);
         gameFont1.draw(game.batch, "Press space to play.", Gdx.graphics.getWidth() * .25f, Gdx.graphics.getHeight() * .25f);
         game.batch.end();
     }

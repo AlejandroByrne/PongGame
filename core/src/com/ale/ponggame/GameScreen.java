@@ -25,7 +25,16 @@ public class GameScreen extends ScreenAdapter {
     public Player player = new Player(Color.YELLOW);
     private ArrayList<Bullet> bullets;
     private ArrayList<PickUp> pickUps;
+    private ArrayList<Enemy> enemies;
     private IntSet keysPressedNow = new IntSet();
+
+    private int totalFrames;
+    private double totalTime;
+    private int lastShootFrames;
+    private double lastShootTime;
+
+    private int mouseX;
+    private int mouseY;
 
     private BitmapFont gameFont1;
     private BitmapFont gameFont2;
@@ -36,8 +45,12 @@ public class GameScreen extends ScreenAdapter {
         gameFont2 = new BitmapFont(Gdx.files.internal("core/assets/gamefont2.fnt"));
         bullets = new ArrayList<Bullet>();
         pickUps = new ArrayList<PickUp>();
-        pickUps.add(new PickUp(new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/ballthing.png")), 400, 200, 40, 40, new Weapon(4,4,5,0,1, new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/ballthing.png")), new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/ballthing.png")))));
-        pickUps.add(new PickUp(new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/lasergun.png")), 800, 600, 40, 40, new Weapon(7, 2, 30, 4, 1, new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/lasergun.png")), new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/Red_laser.png")))));
+        enemies = new ArrayList<Enemy>();
+        pickUps.add(new PickUp(new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/ballthing.png")), 400, 200, 40, 40, new Weapon(4,4,30, 5,0,4, 1, 1, new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/ballthing.png")), new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/ballthing.png")))));
+        pickUps.add(new PickUp(new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/lasergun.png")), 800, 600, 40, 40, new Weapon(7, 2, 5, 50, 4, 16, 0.2, 1, new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/lasergun.png")), new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/Red_laser.png")))));
+        enemies.add(new Enemy(20, 40, 12, 100, new Color(Color.RED)));
+        enemies.add(new Enemy(20, 40, 12, 100, new Color(Color.RED)));
+        enemies.add(new Enemy(20, 40, 12, 100, new Color(Color.RED)));
     }
 
     @Override
@@ -46,14 +59,25 @@ public class GameScreen extends ScreenAdapter {
             @Override
             public boolean touchDown(int x, int y, int pointer, int button) { // mouse click
                 int renderY = Gdx.graphics.getHeight() - y;
-                // shoot bullet
-                double a = Math.abs(x - (player.hitbox.x + player.hitbox.width/2));
-                double b = Math.abs(renderY - (player.hitbox.y + player.hitbox.height/2));
-                double hypotenuse = Math.sqrt((Math.pow( a, 2)) + Math.pow(b, 2)); // working
-                double angle = Math.asin(Math.sin(Math.PI/2) * b / hypotenuse);
+                if(lastShootTime > player.currentWeapon.timeBetweenShots && player.currentWeapon.currentAmmoCount > 0) {
+                    // shoot bullet
+                    double a = Math.abs(x - (player.hitbox.x + player.hitbox.width/2));
+                    double b = Math.abs(renderY - (player.hitbox.y + player.hitbox.height/2));
+                    double hypotenuse = Math.sqrt((Math.pow( a, 2)) + Math.pow(b, 2)); // working
+                    double angle = Math.asin(Math.sin(Math.PI/2) * b / hypotenuse);
+                    bullets.add(new Bullet(player.hitbox.x + player.hitbox.width/2, player.hitbox.y + player.hitbox.height/2, player.currentWeapon.damage, player.currentWeapon.bulletWidth, player.currentWeapon.bulletHeight, player.currentWeapon.bulletSpeed, player.currentWeapon.bulletBouncesAllowed, player.currentWeapon.bulletTexture, angle, (x - (player.hitbox.x + player.hitbox.width/2)), (renderY - (player.hitbox.y + player.hitbox.height/2))));
+                    lastShootFrames = 0;
+                    player.currentWeapon.currentAmmoCount--;
+                }
 
-                bullets.add(new Bullet(player.hitbox.x + player.hitbox.width/2, player.hitbox.y + player.hitbox.height/2, player.currentWeapon.bulletWidth, player.currentWeapon.bulletHeight, player.currentWeapon.bulletSpeed, player.currentWeapon.bulletBouncesAllowed, player.currentWeapon.bulletTexture, angle, (x - (player.hitbox.x + player.hitbox.width/2)), (renderY - (player.hitbox.y + player.hitbox.height/2))));
 
+                return true;
+            }
+
+            @Override
+            public boolean mouseMoved(int x, int y) {
+                mouseX = x;
+                mouseY = y;
                 return true;
             }
 
@@ -73,6 +97,10 @@ public class GameScreen extends ScreenAdapter {
                             player.currentWeapon = player.weapons.get(currentNum + 1); // switch weapons, update the inventory
                         }
                     }
+                } else if(keyCode == Input.Keys.R) {
+                    if(player.currentWeapon.currentAmmoCount < player.currentWeapon.magazineSize) {
+                        player.currentWeapon.reload();
+                    }
                 }
                 keysPressedNow.add(keyCode);
                 return true;
@@ -89,6 +117,11 @@ public class GameScreen extends ScreenAdapter {
 
     @Override
     public void render(float delta) {
+        totalFrames++;
+        totalTime = totalFrames/60.0;
+        lastShootFrames++;
+        lastShootTime = lastShootFrames/60.0;
+
         // INPUT/MOVEMENT
 
         // Player
@@ -119,6 +152,16 @@ public class GameScreen extends ScreenAdapter {
                     b.b *= -1;
                 }
             }
+            //enemies
+            for(Iterator<Enemy> iterator1 = enemies.iterator(); iterator1.hasNext();) {
+                Enemy e = iterator1.next();
+                if(b.hitbox.overlaps(e.hitbox)) {
+                    iterator.remove();
+                    if(!e.takeDamage(b.damage)) {
+                        iterator1.remove();
+                    }
+                }
+            }
 
         }
 
@@ -143,17 +186,28 @@ public class GameScreen extends ScreenAdapter {
         //player
         player.draw(game.shapeRenderer);
 
-        game.batch.begin();
+        //enemies
+        for(Enemy e : enemies) {
+            e.draw(game.shapeRenderer, game.batch, gameFont1);
+        }
+
+        // optional stats
+        /*game.batch.begin();
         gameFont2.draw(game.batch, ("Player X: " + player.hitbox.x + " Player Y: " + player.hitbox.y), Gdx.graphics.getWidth() * .1f, Gdx.graphics.getHeight() * .9f);
-        game.batch.end();
+        gameFont2.draw(game.batch, ("Total Time: " + totalTime), Gdx.graphics.getWidth() * .1f, Gdx.graphics.getHeight() * .8f);
+        gameFont2.draw(game.batch, ("Time Since Last Shot: " + lastShootTime), Gdx.graphics.getWidth() * .1f, Gdx.graphics.getHeight() * .7f);
+        game.batch.end();*/
+
+        //aim triangle
+        //drawAimTriangle(mouseX, mouseY);
 
         //bullets
         for(Bullet b: bullets) {
             b.draw(game.batch);
         }
-
+        // gun stats
         game.batch.begin();
-        gameFont2.draw(game.batch, ("Active Bullets: " + bullets.size()), Gdx.graphics.getWidth() * .25f, Gdx.graphics.getHeight() * .5f);
+        gameFont2.draw(game.batch, ("Ammo: " + player.currentWeapon.currentAmmoCount + "/" + player.currentWeapon.magazineSize + " | " + player.currentWeapon.totalAmmo), Gdx.graphics.getWidth() * 0.8f, Gdx.graphics.getHeight() * 0.1f);
         game.batch.end();
 
         //pickUps
@@ -163,7 +217,6 @@ public class GameScreen extends ScreenAdapter {
 
         // inventory
         updateInventory();
-
     }
 
     @Override
@@ -226,6 +279,70 @@ public class GameScreen extends ScreenAdapter {
             game.batch.draw(w.weaponTexture, x + 5 + (i * 55), y + 5, 45, 45);
             game.batch.end();
         }
+
+        // health bar
+        game.shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        game.shapeRenderer.setColor(Color.WHITE);
+        game.shapeRenderer.rect((float) (Gdx.graphics.getWidth() * 0.5) - 150, (float) (Gdx.graphics.getHeight() * 0.06), 300, 14);
+        if(player.health > 20) {
+            game.shapeRenderer.setColor(Color.BLUE);
+        } else {
+            game.shapeRenderer.setColor(Color.RED);
+        }
+        game.shapeRenderer.rect((float) (Gdx.graphics.getWidth() * 0.5) - 150, (float) (Gdx.graphics.getHeight() * 0.06), (int) (player.health * 3), 14);
+        game.shapeRenderer.end();
+
+        // shooting timer
+        game.shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        game.shapeRenderer.setColor(Color.BLACK);
+        game.shapeRenderer.rect((float) (Gdx.graphics.getWidth() * 0.5) - 50, (float) (Gdx.graphics.getHeight() * 0.03), 100, 8);
+        game.shapeRenderer.setColor(Color.CYAN);
+        if(lastShootTime < player.currentWeapon.timeBetweenShots) {
+            game.shapeRenderer.rect((float) (Gdx.graphics.getWidth() * 0.5) - 50, (float) (Gdx.graphics.getHeight() * 0.03), (int) (lastShootTime/player.currentWeapon.timeBetweenShots * 100), 8);
+        } else {
+            game.shapeRenderer.rect((float) (Gdx.graphics.getWidth() * 0.5) - 50, (float) (Gdx.graphics.getHeight() * 0.03), 100, 8);
+        }
+        game.shapeRenderer.end();
+    }
+
+    public void drawAimTriangle(int x, int y) {
+        int renderY = Gdx.graphics.getHeight() - y;
+        float a = x - (player.hitbox.x + player.hitbox.width/2);
+        float b = renderY - (player.hitbox.y + player.hitbox.height/2);
+        double hypotenuse = Math.sqrt((Math.pow( a, 2)) + Math.pow(b, 2)); // working
+        double angle = Math.asin(Math.sin(Math.PI/2) * b / hypotenuse);
+        float newA1;
+        float newA2;
+        float newB1;
+        float newB2;
+        if(a > 0 && b > 0) { // 1st quadrant
+            newA1 = (float) (a + 20 * Math.cos(angle));
+            newA2 = (float) (a - 20 * Math.cos(angle));
+            newB1 = (float) (b - 20 * Math.sin(angle));
+            newB2 = (float) (b + 20 * Math.sin(angle));
+        } else if(a < 0 && b > 0) { // 2nd quadrant
+            newA1 = (float) (a + 20 * Math.cos(angle));
+            newA2 = (float) (a - 20 * Math.cos(angle));
+            newB1 = (float) (b + 20 * Math.sin(angle));
+            newB2 = (float) (b - 20 * Math.sin(angle));
+        } else if(a < 0 && b < 0) { // 3rd quadrant
+            newA1 = (float) (a + 20 * Math.cos(angle));
+            newA2 = (float) (a - 20 * Math.cos(angle));
+            newB1 = (float) (b - 20 * Math.sin(angle));
+            newB2 = (float) (b + 20 * Math.sin(angle));
+        } else {
+            newA1 = (float) (a + 20 * Math.cos(angle));
+            newA2 = (float) (a - 20 * Math.cos(angle));
+            newB1 = (float) (b + 20 * Math.sin(angle));
+            newB2 = (float) (b - 20 * Math.sin(angle));
+        }
+
+
+        game.shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        double playerX = player.hitbox.x + player.hitbox.width/2;
+        double playerY = player.hitbox.y + player.hitbox.height/2;
+        game.shapeRenderer.triangle((float) playerX, (float) playerY, (float) playerX + newA1, (float) playerY + newB1, (float) playerX + newA2, (float) playerY + newB2);
+        game.shapeRenderer.end();
     }
 
 }

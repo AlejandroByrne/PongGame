@@ -19,13 +19,15 @@ public class Bullet {
     public Rectangle hitbox;
     public Texture texture;
     public int bouncesAllowed;
+    public int damage;
     public int bounces;
     public BS state;
     public double a;
     public double b;
 
-    public Bullet(float xInitial, float yInitial, int width, int height, int speed, int bounceAllowed, Texture texture, double initialAngle, double a, double b) {
+    public Bullet(float xInitial, float yInitial, int damage, int width, int height, int speed, int bounceAllowed, Texture texture, double initialAngle, double a, double b) {
         this.speed = speed;
+        this.damage = damage;
         this.initialAngle = initialAngle;
         this.a = a;
         this.b = b;

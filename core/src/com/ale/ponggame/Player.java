@@ -12,6 +12,7 @@ public class Player {
     public Rectangle hitbox;
     public Color color;
     public int speed;
+    public int health;
 
     public ArrayList<Weapon> weapons;
     public Weapon currentWeapon;
@@ -33,9 +34,9 @@ public class Player {
         hitbox.width = 50;
         hitbox.height = 50;
         speed = 4;
-
+        health = 100;
         weapons = new ArrayList<Weapon>(); // create the player's weapon armory
-        currentWeapon = new Weapon(3, 3, 20, 1, 1, new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/pistol.png")), new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/bullet-png-pictures-1.png")));
+        currentWeapon = new Weapon(3, 3, 10, 20, 1, 12, 0.4, 1, new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/pistol.png")), new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/bullet-png-pictures-1.png")));
         weapons.add(currentWeapon);
     }
 
