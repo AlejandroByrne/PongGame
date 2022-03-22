@@ -73,7 +73,7 @@ public class Bullet {
         Texture texture = this.texture;
         TextureRegion txtR = new TextureRegion(texture);
         batch.draw(txtR, hitbox.x, hitbox.y, 15, 15, 30, 30, 1, 1, ((float) (currentAngleFull * 360 / (2 * Math.PI))));
-        System.out.println(currentAngleFull / (2* Math.PI) * 360);
+        //System.out.println(currentAngleFull / (2* Math.PI) * 360);
         batch.end();
 
     }

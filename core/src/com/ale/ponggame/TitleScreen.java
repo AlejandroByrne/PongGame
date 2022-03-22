@@ -11,7 +11,7 @@ public class TitleScreen extends ScreenAdapter {
 
     public TitleScreen(PongGame game) {
         this.game = game;
-        gameFont1 = new BitmapFont(Gdx.files.internal("core/assets/gamefont1.fnt"));
+        gameFont1 = new BitmapFont(Gdx.files.internal("core/assets/gamefont2.fnt"));
     }
 
     @Override

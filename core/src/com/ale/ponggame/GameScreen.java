@@ -10,20 +10,33 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.IntSet;
 import org.w3c.dom.css.Rect;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 
 public class GameScreen extends ScreenAdapter {
 
+    /*
+            WHAT TO WORK ON NEXT:
+            - Just added weapons to enemies, need to create a new arraylist in the game class to store all
+            bullets from ENEMIES, create a shooting system for enemies, and track the enemy bullets, render
+            them, and check if they hit the player to do damage.
+
+     */
+
     private PongGame game;
 
     public Player player = new Player(Color.YELLOW);
-    private ArrayList<Bullet> bullets;
+    private ArrayList<Bullet> enemyBullets;
+    private ArrayList<Bullet> playerBullets;
     private ArrayList<PickUp> pickUps;
     private ArrayList<Enemy> enemies;
     private IntSet keysPressedNow = new IntSet();
@@ -38,19 +51,23 @@ public class GameScreen extends ScreenAdapter {
 
     private BitmapFont gameFont1;
     private BitmapFont gameFont2;
+    private BitmapFont gameFont3;
 
     public GameScreen(PongGame game) {
         this.game = game;
         gameFont1 = new BitmapFont(Gdx.files.internal("core/assets/gamefont1.fnt"));
         gameFont2 = new BitmapFont(Gdx.files.internal("core/assets/gamefont2.fnt"));
-        bullets = new ArrayList<Bullet>();
+        gameFont3 = new BitmapFont(Gdx.files.internal("core/assets/gamefont3.fnt"));
+        playerBullets = new ArrayList<Bullet>();
+        enemyBullets = new ArrayList<Bullet>();
         pickUps = new ArrayList<PickUp>();
         enemies = new ArrayList<Enemy>();
         pickUps.add(new PickUp(new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/ballthing.png")), 400, 200, 40, 40, new Weapon(4,4,30, 5,0,4, 1, 1, new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/ballthing.png")), new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/ballthing.png")))));
         pickUps.add(new PickUp(new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/lasergun.png")), 800, 600, 40, 40, new Weapon(7, 2, 5, 50, 4, 16, 0.2, 1, new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/lasergun.png")), new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/Red_laser.png")))));
-        enemies.add(new Enemy(20, 40, 12, 100, new Color(Color.RED)));
-        enemies.add(new Enemy(20, 40, 12, 100, new Color(Color.RED)));
-        enemies.add(new Enemy(20, 40, 12, 100, new Color(Color.RED)));
+        Weapon enemyWeapon = new Weapon(7, 2, 5, 50, 4, 16, 0.2, 1, new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/lasergun.png")), new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/Red_laser.png")));
+        enemies.add(new Enemy(20, 12, 100, new Color(Color.RED), enemyWeapon));
+        enemies.add(new Enemy(20, 12, 100, new Color(Color.RED), enemyWeapon));
+        enemies.add(new Enemy(20, 12, 100, new Color(Color.RED), enemyWeapon));
     }
 
     @Override
@@ -58,18 +75,7 @@ public class GameScreen extends ScreenAdapter {
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
             public boolean touchDown(int x, int y, int pointer, int button) { // mouse click
-                int renderY = Gdx.graphics.getHeight() - y;
-                if(lastShootTime > player.currentWeapon.timeBetweenShots && player.currentWeapon.currentAmmoCount > 0) {
-                    // shoot bullet
-                    double a = Math.abs(x - (player.hitbox.x + player.hitbox.width/2));
-                    double b = Math.abs(renderY - (player.hitbox.y + player.hitbox.height/2));
-                    double hypotenuse = Math.sqrt((Math.pow( a, 2)) + Math.pow(b, 2)); // working
-                    double angle = Math.asin(Math.sin(Math.PI/2) * b / hypotenuse);
-                    bullets.add(new Bullet(player.hitbox.x + player.hitbox.width/2, player.hitbox.y + player.hitbox.height/2, player.currentWeapon.damage, player.currentWeapon.bulletWidth, player.currentWeapon.bulletHeight, player.currentWeapon.bulletSpeed, player.currentWeapon.bulletBouncesAllowed, player.currentWeapon.bulletTexture, angle, (x - (player.hitbox.x + player.hitbox.width/2)), (renderY - (player.hitbox.y + player.hitbox.height/2))));
-                    lastShootFrames = 0;
-                    player.currentWeapon.currentAmmoCount--;
-                }
-
+                // check to see if the player clicked certain buttons to purchase things or to bring up menus
 
                 return true;
             }
@@ -101,6 +107,27 @@ public class GameScreen extends ScreenAdapter {
                     if(player.currentWeapon.currentAmmoCount < player.currentWeapon.magazineSize) {
                         player.currentWeapon.reload();
                     }
+                } else if(keyCode == Input.Keys.SPACE) {
+                    float y = Gdx.graphics.getHeight() - Gdx.input.getY();
+                    float x = Gdx.input.getX();
+                    System.out.println(y);
+                    if(lastShootTime > player.currentWeapon.timeBetweenShots && player.currentWeapon.currentAmmoCount > 0) {
+                        // shoot bullet
+                        double dx = x - (player.hitbox.x);
+                        double dy = y - (player.hitbox.y);
+                        System.out.println(dx + ", " + dy);
+                        double angle = Math.atan2(dy, dx);
+                        System.out.println(angle / (2 * Math.PI) * 360);
+                        playerBullets.add(new Bullet(player.hitbox.x, player.hitbox.y, player.currentWeapon.damage, player.currentWeapon.bulletWidth, player.currentWeapon.bulletHeight, player.currentWeapon.bulletSpeed, player.currentWeapon.bulletBouncesAllowed, player.currentWeapon.bulletTexture, angle, x, y));
+                        lastShootFrames = 0;
+                        player.currentWeapon.currentAmmoCount--;
+                    }
+
+                } else if(keyCode == Input.Keys.ENTER) {
+                    player.shrink();
+                    //add code to send a pop-up notification if the player could not shrink
+                } else if(keyCode == Input.Keys.SHIFT_RIGHT) {
+                    player.heal();
                 }
                 keysPressedNow.add(keyCode);
                 return true;
@@ -127,8 +154,8 @@ public class GameScreen extends ScreenAdapter {
         // Player
         onKeysPressed();
 
-        // Bullets
-        for(Iterator<Bullet> iterator = bullets.iterator(); iterator.hasNext();) {
+        // Player Bullets
+        for(Iterator<Bullet> iterator = playerBullets.iterator(); iterator.hasNext();) {
             Bullet b = iterator.next();
             b.hitbox.x += b.xSpeed;
             b.hitbox.y += b.ySpeed;
@@ -152,10 +179,11 @@ public class GameScreen extends ScreenAdapter {
                     b.b *= -1;
                 }
             }
-            //enemies
+            // if collide with the enemies
             for(Iterator<Enemy> iterator1 = enemies.iterator(); iterator1.hasNext();) {
                 Enemy e = iterator1.next();
-                if(b.hitbox.overlaps(e.hitbox)) {
+                if(Intersector.overlaps(e.hitbox, b.hitbox)) {
+                    player.points++;
                     iterator.remove();
                     if(!e.takeDamage(b.damage)) {
                         iterator1.remove();
@@ -165,12 +193,60 @@ public class GameScreen extends ScreenAdapter {
 
         }
 
+        // enemy shooting
+        for(Enemy e : enemies) {
+            if(e.difficulty * Math.random() * 10 < 0.3) {
+                int x = (int) player.hitbox.x;
+                int y = (int) player.hitbox.y;
+                int renderY = Gdx.graphics.getHeight() - y;
+                double a = Math.abs(x - (e.hitbox.x + e.hitbox.radius/2));
+                double b = Math.abs(renderY - (e.hitbox.y + e.hitbox.radius/2));
+                double hypotenuse = Math.sqrt((Math.pow( a, 2)) + Math.pow(b, 2)); // working
+                double angle = Math.asin(Math.sin(Math.PI/2) * b / hypotenuse);
+                enemyBullets.add(new Bullet(e.hitbox.x + e.hitbox.radius/2, e.hitbox.y + e.hitbox.radius/2, e.weapon.damage, e.weapon.bulletWidth, e.weapon.bulletHeight, e.weapon.bulletSpeed, e.weapon.bulletBouncesAllowed, e.weapon.bulletTexture, angle, (x - (e.hitbox.x + e.hitbox.radius/2)), (renderY - (e.hitbox.y + e.hitbox.radius/2))));
+            }
+        }
+
+        // enemy bullets
+        for(Iterator<Bullet> iterator = enemyBullets.iterator(); iterator.hasNext();) {
+            Bullet b = iterator.next();
+            b.hitbox.x += b.xSpeed;
+            b.hitbox.y += b.ySpeed;
+            //edges of screen
+            if(b.hitbox.x < 0 || b.hitbox.x > Gdx.graphics.getWidth()) {
+                b.bounces++;
+                if(b.bounces > b.bouncesAllowed) {
+                    b.hit();
+                    iterator.remove();
+                } else {
+                    b.xSpeed *= -1;
+                    b.a *= -1;
+                }
+            } else if(b.hitbox.y < 0 || b.hitbox.y > Gdx.graphics.getHeight()) {
+                b.bounces++;
+                if(b.bounces > b.bouncesAllowed) {
+                    b.hit();
+                    iterator.remove();
+                } else {
+                    b.ySpeed *= -1;
+                    b.b *= -1;
+                }
+            }
+            // if collide with the player
+            if(Intersector.overlaps(player.hitbox, b.hitbox)) {
+                iterator.remove();
+                if(!player.takeDamage(b.damage)) {
+                    game.setScreen(new EndScreen(game));
+                }
+            }
+        }
+
         // walls
 
         //pickups
         for(Iterator<PickUp> iterator = pickUps.iterator(); iterator.hasNext();) {
             PickUp p = iterator.next();
-            if(player.hitbox.overlaps(p.hitbox)) {
+            if(Intersector.overlaps(player.hitbox, p.hitbox)) {
                 p.addToInventory(player);
                 iterator.remove();
             }
@@ -180,7 +256,7 @@ public class GameScreen extends ScreenAdapter {
 
 
         // RENDERING
-        Gdx.gl.glClearColor(0, 0, 0.25f, 1);
+        Gdx.gl.glClearColor(232/255, 232/255, 232/255, 0);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         //player
@@ -192,22 +268,26 @@ public class GameScreen extends ScreenAdapter {
         }
 
         // optional stats
-        /*game.batch.begin();
-        gameFont2.draw(game.batch, ("Player X: " + player.hitbox.x + " Player Y: " + player.hitbox.y), Gdx.graphics.getWidth() * .1f, Gdx.graphics.getHeight() * .9f);
-        gameFont2.draw(game.batch, ("Total Time: " + totalTime), Gdx.graphics.getWidth() * .1f, Gdx.graphics.getHeight() * .8f);
-        gameFont2.draw(game.batch, ("Time Since Last Shot: " + lastShootTime), Gdx.graphics.getWidth() * .1f, Gdx.graphics.getHeight() * .7f);
-        game.batch.end();*/
+        game.batch.begin();
+        gameFont3.draw(game.batch, ("Points: " + player.points), Gdx.graphics.getWidth() * 0.01f, Gdx.graphics.getHeight() * 0.95f);
+        //gameFont2.draw(game.batch, ("Player X: " + player.hitbox.x + " Player Y: " + player.hitbox.y), Gdx.graphics.getWidth() * .1f, Gdx.graphics.getHeight() * .9f);
+        gameFont3.draw(game.batch, String.format("Total Time: %.1f", totalTime), Gdx.graphics.getWidth() * .01f, Gdx.graphics.getHeight() * .9f);
+        //gameFont2.draw(game.batch, ("Time Since Last Shot: " + lastShootTime), Gdx.graphics.getWidth() * .1f, Gdx.graphics.getHeight() * .7f);
+        game.batch.end();
 
         //aim triangle
         //drawAimTriangle(mouseX, mouseY);
 
         //bullets
-        for(Bullet b: bullets) {
+        for(Bullet b: playerBullets) {
+            b.draw(game.batch);
+        }
+        for(Bullet b : enemyBullets) {
             b.draw(game.batch);
         }
         // gun stats
         game.batch.begin();
-        gameFont2.draw(game.batch, ("Ammo: " + player.currentWeapon.currentAmmoCount + "/" + player.currentWeapon.magazineSize + " | " + player.currentWeapon.totalAmmo), Gdx.graphics.getWidth() * 0.8f, Gdx.graphics.getHeight() * 0.1f);
+        gameFont3.draw(game.batch, ("Ammo: " + player.currentWeapon.currentAmmoCount + "/" + player.currentWeapon.magazineSize + " | " + player.currentWeapon.totalAmmo), Gdx.graphics.getWidth() * 0.8f, Gdx.graphics.getHeight() * 0.1f);
         game.batch.end();
 
         //pickUps
@@ -217,6 +297,11 @@ public class GameScreen extends ScreenAdapter {
 
         // inventory
         updateInventory();
+
+        //buttons
+
+        // button listeners
+
     }
 
     @Override
@@ -256,7 +341,7 @@ public class GameScreen extends ScreenAdapter {
         game.shapeRenderer.end();
         // Render inventory slots w/ a shaperenderer
         game.shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        game.shapeRenderer.setColor(new Color(0, 0, 0, 1));
+        game.shapeRenderer.setColor(new Color(0, 0, 0, 0.3f));
         game.shapeRenderer.rect(x, y, 50, 50);
         game.shapeRenderer.rect(x + 55, y, 50, 50);
         game.shapeRenderer.rect(x + 110, y, 50, 50);
@@ -265,7 +350,7 @@ public class GameScreen extends ScreenAdapter {
         game.shapeRenderer.end();
 
         game.shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        game.shapeRenderer.setColor(new Color(1, 0.28f, 0, 1));
+        game.shapeRenderer.setColor(new Color(1, 0.28f, 0, 0.3f));
         game.shapeRenderer.rect(x + 5, y + 5, 45, 45);
         game.shapeRenderer.rect(x + 60, y + 5, 45, 45);
         game.shapeRenderer.rect(x + 115, y + 5, 45, 45);
@@ -307,8 +392,8 @@ public class GameScreen extends ScreenAdapter {
 
     public void drawAimTriangle(int x, int y) {
         int renderY = Gdx.graphics.getHeight() - y;
-        float a = x - (player.hitbox.x + player.hitbox.width/2);
-        float b = renderY - (player.hitbox.y + player.hitbox.height/2);
+        float a = x - (player.hitbox.x + player.hitbox.radius);
+        float b = renderY - (player.hitbox.y + player.hitbox.radius);
         double hypotenuse = Math.sqrt((Math.pow( a, 2)) + Math.pow(b, 2)); // working
         double angle = Math.asin(Math.sin(Math.PI/2) * b / hypotenuse);
         float newA1;
@@ -339,8 +424,8 @@ public class GameScreen extends ScreenAdapter {
 
 
         game.shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        double playerX = player.hitbox.x + player.hitbox.width/2;
-        double playerY = player.hitbox.y + player.hitbox.height/2;
+        double playerX = player.hitbox.x + player.hitbox.radius;
+        double playerY = player.hitbox.y + player.hitbox.radius;
         game.shapeRenderer.triangle((float) playerX, (float) playerY, (float) playerX + newA1, (float) playerY + newB1, (float) playerX + newA2, (float) playerY + newB2);
         game.shapeRenderer.end();
     }

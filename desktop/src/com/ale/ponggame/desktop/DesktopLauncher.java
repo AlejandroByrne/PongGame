@@ -8,10 +8,11 @@ public class DesktopLauncher {
 	public static void main (String[] arg) {
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
 
-		config.title = "Pong Game";
+		config.title = "Math IA";
 		config.width = 1080;
 		config.height = 720;
 		config.foregroundFPS=60;
+		config.fullscreen = true;
 
 		new LwjglApplication(new PongGame(), config);
 	}
