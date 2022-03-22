@@ -69,7 +69,7 @@ public class Player {
     }
 
     public boolean heal() {
-        if(points > 5) {
+        if(points >= 5) {
             if(health >= 96) {
                 health = 100;
                 points -= 5;

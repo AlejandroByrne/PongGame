@@ -1,9 +1,6 @@
 package com.ale.ponggame;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
-import com.badlogic.gdx.InputAdapter;
-import com.badlogic.gdx.ScreenAdapter;
+import com.badlogic.gdx.*;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
@@ -13,11 +10,15 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener.ChangeEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.IntSet;
 import org.w3c.dom.css.Rect;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -25,12 +26,13 @@ import java.util.Iterator;
 public class GameScreen extends ScreenAdapter {
 
     /*
-            WHAT TO WORK ON NEXT:
-            - Just added weapons to enemies, need to create a new arraylist in the game class to store all
-            bullets from ENEMIES, create a shooting system for enemies, and track the enemy bullets, render
-            them, and check if they hit the player to do damage.
-
-     */
+        WHAT TO DO NEXT:
+        - add a way to have pop-up messages that last for a certain amount of frames (seconds)
+        - add more pickUps
+            - heals
+            - boosters
+            - etc
+    */
 
     private PongGame game;
 
@@ -49,19 +51,33 @@ public class GameScreen extends ScreenAdapter {
     private int mouseX;
     private int mouseY;
 
+    private ArrayList<GameButton> buttons = new ArrayList<>();
+    GameButton menuButton = new GameButton(Gdx.graphics.getWidth() * 0.9f, Gdx.graphics.getHeight() * 0.9f, 70, 50, new Color(Color.ROYAL), "MENU", 10, 32);
+    GameButton exitButton = new GameButton(Gdx.graphics.getWidth() * 0.9f, Gdx.graphics.getHeight() * 0.9f - 70, 70, 50, new Color(Color.FIREBRICK), "EXIT", 10, 32);
+
     private BitmapFont gameFont1;
     private BitmapFont gameFont2;
     private BitmapFont gameFont3;
 
     public GameScreen(PongGame game) {
         this.game = game;
+
+
+        buttons.add(menuButton);
+        buttons.add(exitButton);
+        menuButton.toggle();
+
         gameFont1 = new BitmapFont(Gdx.files.internal("core/assets/gamefont1.fnt"));
         gameFont2 = new BitmapFont(Gdx.files.internal("core/assets/gamefont2.fnt"));
         gameFont3 = new BitmapFont(Gdx.files.internal("core/assets/gamefont3.fnt"));
+
         playerBullets = new ArrayList<Bullet>();
         enemyBullets = new ArrayList<Bullet>();
+
         pickUps = new ArrayList<PickUp>();
         enemies = new ArrayList<Enemy>();
+
+        pickUps.add(new PickUp(new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/canon.png")), 300, 200, 40, 50, new Weapon(4, 4, 50, 5, 0, 1, 3, 1, new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/canon.png")), new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/cannon_ball.png")))));
         pickUps.add(new PickUp(new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/ballthing.png")), 400, 200, 40, 40, new Weapon(4,4,30, 5,0,4, 1, 1, new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/ballthing.png")), new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/ballthing.png")))));
         pickUps.add(new PickUp(new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/lasergun.png")), 800, 600, 40, 40, new Weapon(7, 2, 5, 50, 4, 16, 0.2, 1, new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/lasergun.png")), new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/Red_laser.png")))));
         Weapon enemyWeapon = new Weapon(7, 2, 5, 50, 4, 16, 0.2, 1, new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/lasergun.png")), new Texture(Gdx.files.internal("core/src/com/ale/ponggame/images/Red_laser.png")));
@@ -72,18 +88,29 @@ public class GameScreen extends ScreenAdapter {
 
     @Override
     public void show() {
+
         Gdx.input.setInputProcessor(new InputAdapter() {
+
             @Override
             public boolean touchDown(int x, int y, int pointer, int button) { // mouse click
                 // check to see if the player clicked certain buttons to purchase things or to bring up menus
+
+                Rectangle mouseArea = new Rectangle(mouseX-1, mouseY-1, 2, 2);
+
+                if(menuButton.area.overlaps(mouseArea)) {
+                    exitButton.toggle();
+                }
+                if(exitButton.isToggled && exitButton.area.overlaps(mouseArea)) {
+                    Gdx.app.exit();
+                }
 
                 return true;
             }
 
             @Override
             public boolean mouseMoved(int x, int y) {
-                mouseX = x;
-                mouseY = y;
+                mouseY = Gdx.graphics.getHeight() - Gdx.input.getY();
+                mouseX = Gdx.input.getX();
                 return true;
             }
 
@@ -140,6 +167,8 @@ public class GameScreen extends ScreenAdapter {
             }
 
         });
+
+
     }
 
     @Override
@@ -256,7 +285,7 @@ public class GameScreen extends ScreenAdapter {
 
 
         // RENDERING
-        Gdx.gl.glClearColor(232/255, 232/255, 232/255, 0);
+        Gdx.gl.glClearColor(23f/255, 23f/255, 23f/255, 0);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         //player
@@ -286,9 +315,7 @@ public class GameScreen extends ScreenAdapter {
             b.draw(game.batch);
         }
         // gun stats
-        game.batch.begin();
-        gameFont3.draw(game.batch, ("Ammo: " + player.currentWeapon.currentAmmoCount + "/" + player.currentWeapon.magazineSize + " | " + player.currentWeapon.totalAmmo), Gdx.graphics.getWidth() * 0.8f, Gdx.graphics.getHeight() * 0.1f);
-        game.batch.end();
+
 
         //pickUps
         for(PickUp p : pickUps) {
@@ -298,9 +325,10 @@ public class GameScreen extends ScreenAdapter {
         // inventory
         updateInventory();
 
-        //buttons
-
-        // button listeners
+        // menu
+        for(GameButton b : buttons) {
+            b.draw(game.shapeRenderer, game.batch, gameFont3);
+        }
 
     }
 
@@ -326,8 +354,10 @@ public class GameScreen extends ScreenAdapter {
 
     public void updateInventory() {
         //establish the left-hand corner coordinates which the inventory will default to, relative to the screen dimensions
-        int x = (int) (Gdx.graphics.getWidth() * 0.05);
-        int y = (int) (Gdx.graphics.getHeight() * 0.05);
+        int x = (int) (Gdx.graphics.getWidth() * 0.1);
+        int y = (int) (Gdx.graphics.getHeight() * 0.02);
+        int boxWidth = 50;
+        int boxHeight = 50;
 
         int currentNum = 0;
         for(int i=0; i<player.weapons.size(); i++) {
@@ -343,27 +373,34 @@ public class GameScreen extends ScreenAdapter {
         game.shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         game.shapeRenderer.setColor(new Color(0, 0, 0, 0.3f));
         game.shapeRenderer.rect(x, y, 50, 50);
-        game.shapeRenderer.rect(x + 55, y, 50, 50);
-        game.shapeRenderer.rect(x + 110, y, 50, 50);
-        game.shapeRenderer.rect(x + 165, y, 50, 50);
-        game.shapeRenderer.rect(x + 220, y, 50, 50);
+        game.shapeRenderer.rect(x + 55, y, boxWidth, boxHeight);
+        game.shapeRenderer.rect(x + 110, y, boxWidth, boxHeight);
+        game.shapeRenderer.rect(x + 165, y, boxWidth, boxHeight);
+        game.shapeRenderer.rect(x + 220, y, boxWidth, boxHeight);
         game.shapeRenderer.end();
 
         game.shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        game.shapeRenderer.setColor(new Color(1, 0.28f, 0, 0.3f));
-        game.shapeRenderer.rect(x + 5, y + 5, 45, 45);
-        game.shapeRenderer.rect(x + 60, y + 5, 45, 45);
-        game.shapeRenderer.rect(x + 115, y + 5, 45, 45);
-        game.shapeRenderer.rect(x + 170, y + 5, 45, 45);
-        game.shapeRenderer.rect(x + 225, y + 5, 45, 45);
+        game.shapeRenderer.setColor(new Color(137.0f/255, 179.0f/255, 217.0f/255, 1));
+        game.shapeRenderer.rect(x, y, boxWidth, boxHeight);
+        game.shapeRenderer.rect(x + 55, y, boxWidth, boxHeight);
+        game.shapeRenderer.rect(x + 110, y, boxWidth, boxHeight);
+        game.shapeRenderer.rect(x + 165, y, boxWidth, boxHeight);
+        game.shapeRenderer.rect(x + 220, y, boxWidth, boxHeight);
         game.shapeRenderer.end();
 
         for(int i=0; i<player.weapons.size(); i++) {
             Weapon w = player.weapons.get(i);
             game.batch.begin();
-            game.batch.draw(w.weaponTexture, x + 5 + (i * 55), y + 5, 45, 45);
+            game.batch.draw(w.weaponTexture, x + 2 + (i * 55), y + 2, 45, 45);
             game.batch.end();
         }
+
+        // ammo count
+        game.batch.begin();
+        gameFont3.draw(game.batch, ("" + player.currentWeapon.currentAmmoCount), x-40, y+40);
+        gameFont3.draw(game.batch, ("__"), x - 40, y+38);
+        gameFont3.draw(game.batch, ("" + player.currentWeapon.totalAmmo), x-40, y+16);
+        game.batch.end();
 
         // health bar
         game.shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);

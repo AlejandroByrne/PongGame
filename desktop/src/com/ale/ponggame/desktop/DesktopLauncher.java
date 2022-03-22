@@ -12,7 +12,7 @@ public class DesktopLauncher {
 		config.width = 1080;
 		config.height = 720;
 		config.foregroundFPS=60;
-		config.fullscreen = true;
+		config.fullscreen = false;
 
 		new LwjglApplication(new PongGame(), config);
 	}

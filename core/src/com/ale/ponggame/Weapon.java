@@ -35,11 +35,14 @@ public class Weapon {
 
     public void reload() {
         if(totalAmmo >= magazineSize) {
-            totalAmmo -= magazineSize;
+            totalAmmo -= (magazineSize-currentAmmoCount);
             currentAmmoCount = magazineSize;
-        } else if(totalAmmo > 0) {
+        } else if(totalAmmo > 0 && totalAmmo >= (magazineSize-currentAmmoCount)) {
+            totalAmmo -= (magazineSize-currentAmmoCount);
+            currentAmmoCount = magazineSize;
+        } else {
             currentAmmoCount += totalAmmo;
-            totalAmmo -= totalAmmo;
+            totalAmmo = 0;
         }
     }
 
